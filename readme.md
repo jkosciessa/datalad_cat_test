@@ -22,6 +22,8 @@ To avoid software environment issues, it is recommended to install the datacat p
 
 When there are multiple datasets that should be jointly captured within a catalog, it makes sense to encapsulate them within a subdataset. If subdatasets are nested, it helps catalog creation to have the relevant subdatasets available on the same version. Once the superdataset has been created, we can add metadata for the superdataset ([template](https://github.com/mslw/AIDAqc-dataset/blob/main/.studyminimeta.yaml)), which we will opt to ultimately render at the main page of the catalog.
 
+The superdataset associated with this example catalog can be found [here](https://github.com/jkosciessa/eegmp).
+
 ### 1. Extracting metadata using datalad metadata extention
 
 The metadata in the .txt file usually can come from two levels, the (1) dataset level, (2) file level. There are moreover additional extractors, such as for structured BIDS data (see next section). 
@@ -218,9 +220,15 @@ Now we want to set the superdataset of the catalog, to tell it which one to navi
 
 ```
 datalad catalog set-super -c <path-to-your-catalog-directory> -i <dataset_id> -v <dataset_version>
+```
+
+Example:
+
+```
 datalad catalog set-super -c eegmp_catalog/ -i e3076b62-d690-4b85-9c2d-e65aee6c057d -v 770f5729d088d5c491f370d24f3d7a9e0235027d
 catalog set-super(ok): /Users/kosciessa/hackathon2022 [Superdataset successfully set for catalog]
 ```
+*Hint: The id and version information can be manually extracted from the metadata.txt files.*
 
 This will save a `super.json` file in the `metadata` directory of the catalog folder.
 
