@@ -33,8 +33,16 @@ datalad -f json_pp meta-extract -d . metalad_core
 The flag `-f json_pp` can be used to display json information in a "pretty print" version in the terminal. We can use this command to visualize the metadata that are being extracted prior to writing them into an external text file. Next, we export the relevant metadata to a .txt file.
 
 ```
-datalad meta-extract -d . metalad_core > supermetadata.txt
-datalad meta-extract -d . metalad_studyminimeta >> supermetadata.txt
+datalad meta-extract -d . metalad_core > ./../eegmp_cat/supermetadata.txt
+datalad meta-extract -d . metalad_studyminimeta >> ./../eegmp_cat/supermetadata.txt
+```
+
+We can now also do metadata extraction for the subdatasets.
+
+```
+datalad meta-extract -d ./eegmp_data/ metalad_core >> ./../eegmp_cat/supermetadata.txt
+datalad meta-extract -d ./eegmp_preproc/ metalad_core >> ./../eegmp_cat/supermetadata.txt
+datalad meta-extract -d ./eegmp_analysis/ metalad_core >> ./../eegmp_cat/supermetadata.txt
 ```
 
 *Note: So far, we have manually extracted these different types of information, but there is also the option to recursively obtain metadata. [TO DO]*
@@ -50,6 +58,19 @@ datalad -f json meta-conduct <path-to-file-extract_file_metadata.json> \
     | jq -c '.["pipeline_data"]["result"]["metadata"][0]["metadata_record"]' >> <path-to-output-file>
 ```
 
+- *Note: `extract_file_metadata.json` is part of the `fairly-big-catalog-workflow` [repository](https://github.com/jsheunis/fairly-big-catalog-workflow.git); see below for clone instructions*
+- *Note: There may be an issue with relative paths, safer to specify absolute paths for now ([see this issue](https://github.com/datalad/datalad-metalad/issues/253))*
+
+e.g., applied to my specific example:
+
+```
+datalad -f json meta-conduct /Users/kosciessa/hackathon2022/fairly-big-catalog-workflow/conduct_pipelines/extract_file_metadata.json \
+    traverser.top_level_dir=/Users/kosciessa/hackathon2022/eegmp/eegmp_data/ \
+    traverser.item_type=file \
+    extractor.extractor_type=file \
+    extractor.extractor_name=metalad_core \
+    | jq -c '.["pipeline_data"]["result"]["metadata"][0]["metadata_record"]' >> /Users/kosciessa/hackathon2022/eegmp_cat/eegmp_data_filemeta.txt
+```
 
 ### Extracting BIDS metadata
 
@@ -66,10 +87,16 @@ git checkout update-bids-extractor
 pip install -e .
 ```
 
-We can now proceed with metadata extraction. The example shows the pretty print visualization in terminal, ultimately we want to append this metadata to the metadata txt file.
+We can now proceed with metadata extraction. The example shows the pretty print visualization in the terminal. Note that in the current example, the actual BIDS directory is `/eegmp_data/eeg_BIDS/`, but we need to point the meta-extract call to a datalad dataset. The function will now look for a `participants.tsv` file to identify the root directory of a valid BIDS directory within a specified dataset. Long story short, the target of the call needs to be the dataset `/eegmp_data/`, not the BIDS root therein (`/eegmp_data/eeg_BIDS/`).
 
 ```
-datalad -f json_pp meta-extract -d ./eegmp_data/eeg_BIDS/ bids_dataset
+datalad -f json_pp meta-extract -d ./eegmp_data/ bids_dataset
+```
+
+Ultimately we want to append this metadata to the metadata txt file.
+
+```
+datalad meta-extract -d ./eegmp_data/ bids_dataset >> ./../eegmp_cat/supermetadata.txt
 ```
 
 *Note related to eegmp dataset: before running BIDS metadata extraction, all events.json files were deleted beacuse they were empty cells and could not be retrieved via `datalad get`, thus producing an error when trying to run the `meta-extract` command.*: `rm ./sub-*/eeg/sub-*_task-xxxx_events.json` 
@@ -82,8 +109,12 @@ The current metadata contained in the .txt file now needs to be translated into 
 git clone https://github.com/jsheunis/fairly-big-catalog-workflow.git
 cd fairly-big-catalog-workflow
 chmod -R u+rwx ./extractor_translators/*
-./translate2catalog.sh -f ./../../eegmp/supermetadata.txt 
+chmod -R u+rwx ./local/*
+cd local
+./local_translate_metadata.sh ./../../eegmp_cat/supermetadata.txt ./../../eegmp_cat/supermetadata_translated.txt 
 ```
+
+The key command here is `./local_translate_metadata.sh <metadata.txt> <metadata_translated.txt>`
 
 This produces a file called `<original-name>_translated.txt` that contains the metadata as required by datalad catalog.
 
